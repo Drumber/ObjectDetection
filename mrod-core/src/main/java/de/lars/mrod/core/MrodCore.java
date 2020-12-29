@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.tinylog.Logger;
 
-import de.lars.mrod.core.detection.ObjectDetector;
+import de.lars.mrod.core.detection.AbstractDetector;
 import nu.pattern.OpenCV;
 
 public class MrodCore {
@@ -32,17 +32,17 @@ public class MrodCore {
 		return isInitialized;
 	}
 	
-	public DetectorExecutor registerDetector(ObjectDetector detector) {
+	public DetectorExecutor registerDetector(AbstractDetector<?> detector) {
 		return registerDetector(detector, 100);
 	}
 	
-	public DetectorExecutor registerDetector(ObjectDetector detector, int delay) {
+	public DetectorExecutor registerDetector(AbstractDetector<?> detector, int delay) {
 		DetectorExecutor executor = new DetectorExecutor(detector, delay);
 		listExecutors.add(executor);
 		return executor;
 	}
 	
-	public void unregisterDetector(ObjectDetector detector) {
+	public void unregisterDetector(AbstractDetector<?> detector) {
 		Iterator<DetectorExecutor> it = listExecutors.iterator();
 		for(DetectorExecutor de = it.next(); it.hasNext(); de = it.next()) {
 			if(de.getDetector().equals(detector)) {
@@ -55,6 +55,12 @@ public class MrodCore {
 	
 	public List<DetectorExecutor> getDetectorExecutors() {
 		return listExecutors;
+	}
+	
+	public void stopAllDetectors() {
+		for(DetectorExecutor de : listExecutors) {
+			de.stop();
+		}
 	}
 	
 }

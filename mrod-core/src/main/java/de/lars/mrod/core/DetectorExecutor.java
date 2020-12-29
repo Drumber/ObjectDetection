@@ -6,25 +6,25 @@ import java.util.concurrent.TimeUnit;
 
 import org.tinylog.Logger;
 
-import de.lars.mrod.core.detection.ObjectDetector;
+import de.lars.mrod.core.detection.AbstractDetector;
 
 public class DetectorExecutor {
 	
 	private ScheduledExecutorService executor;
-	private final ObjectDetector detector;
+	private final AbstractDetector<?> detector;
 	private boolean running;
 	private int loopDelay;
 	
-	public DetectorExecutor(ObjectDetector detector) {
+	public DetectorExecutor(AbstractDetector<?> detector) {
 		this(detector, 100);
 	}
 	
-	public DetectorExecutor(ObjectDetector detector, int delay) {
+	public DetectorExecutor(AbstractDetector<?> detector, int delay) {
 		this.detector = detector;
 		this.loopDelay = delay;
 	}
 	
-	public ObjectDetector getDetector() {
+	public AbstractDetector<?> getDetector() {
 		return detector;
 	}
 	
@@ -39,7 +39,12 @@ public class DetectorExecutor {
 		executor = Executors.newScheduledThreadPool(1);
 		Logger.info("Starting executor for '" + detector.toString() + "'.");
 		executor.scheduleAtFixedRate(() -> {
-			boolean success = detector.process();
+			boolean success = false;
+			try {
+				success = detector.process();
+			} catch(Throwable t) {
+				Logger.error(t, "An error occured during frame processing.");
+			}
 			if(!success) {
 				stop();
 			}
