@@ -2,6 +2,7 @@ package de.lars.mrod.test.core;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -17,9 +18,7 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.ButtonGroup;
-import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
@@ -51,7 +50,7 @@ public class MrodTestGui {
 		frame.setPreferredSize(new Dimension(800, 600));
 		
 		JPanel contentPane = new JPanel(new BorderLayout());
-		JLabel lblImg = new JLabel();
+		JPanel panelImg = new JPanel();
 		
 		ButtonGroup rbtnGroup = new ButtonGroup();
 		JRadioButton rbtnObj = new JRadioButton("Haar Cascade");
@@ -62,7 +61,7 @@ public class MrodTestGui {
 		panelRbtns.add(rbtnObj);
 		panelRbtns.add(rbtnYolo);
 		
-		contentPane.add(lblImg, BorderLayout.CENTER);
+		contentPane.add(panelImg, BorderLayout.CENTER);
 		contentPane.add(panelRbtns, BorderLayout.SOUTH);
 		frame.setContentPane(contentPane);
 		frame.pack();
@@ -91,7 +90,7 @@ public class MrodTestGui {
 		objDetector.addCallback(new ResultCallback<ObjectDetectionResult>() {
 			@Override
 			public void onDetectionResult(ObjectDetectionResult result) {
-				updateLabelIcon(lblImg, result.getFrame());
+				updateLabelIcon(panelImg, result.getFrame());
 			}
 		});
 		DetectorExecutor objExecutor = core.registerDetector(objDetector, 100);
@@ -99,20 +98,29 @@ public class MrodTestGui {
 		
 		//---
 		// YOLO Object Detection
+		// yolov3
 		URI fileYoloCfg = MrodTestGui.class.getClassLoader().getResource("yolo/yolov3.cfg").toURI();
 		URI fileYoloWeights = MrodTestGui.class.getClassLoader().getResource("yolo/yolov3.weights").toURI();
-		URI fileCocoNames = MrodTestGui.class.getClassLoader().getResource("yolo/coco.names").toURI();
-		// read coco names
-		List<String> cocoNames = readLinesFromFile(new File(fileCocoNames));
+		// tiny yolov3
+		//URI fileYoloCfg = MrodTestGui.class.getClassLoader().getResource("yolo/yolov3-tiny.cfg").toURI();
+		//URI fileYoloWeights = MrodTestGui.class.getClassLoader().getResource("yolo/yolov3-tiny.weights").toURI();
+		// yolo openimagesdataset
+		//URI fileYoloCfg = MrodTestGui.class.getClassLoader().getResource("yolo/yolov3-openimages.cfg").toURI();
+		//URI fileYoloWeights = MrodTestGui.class.getClassLoader().getResource("yolo/yolov3-openimages.weights").toURI();
+		//URI fileClassNames = MrodTestGui.class.getClassLoader().getResource("yolo/openimages.names").toURI();
+		
+		URI fileClassNames = MrodTestGui.class.getClassLoader().getResource("yolo/coco.names").toURI();
+		// read class names
+		List<String> classNames = readLinesFromFile(new File(fileClassNames));
 		
 		YoloDetector yoloDetector = new YoloDetector(vidCam,
 				new File(fileYoloCfg).getAbsolutePath(),
 				new File(fileYoloWeights).getAbsolutePath());
-		yoloDetector.setObjectNames(cocoNames);
+		yoloDetector.setObjectNames(classNames);
 		yoloDetector.addCallback(new ResultCallback<YoloDetectionResult>() {
 			@Override
 			public void onDetectionResult(YoloDetectionResult result) {
-				updateLabelIcon(lblImg, result.getFrame());
+				updateLabelIcon(panelImg, result.getFrame());
 			}
 		});
 		DetectorExecutor yoloExecutor = core.registerDetector(yoloDetector, 20);
@@ -133,14 +141,17 @@ public class MrodTestGui {
 			}
 		});
 		
-		rbtnObj.setSelected(true); // set haar cascade detector as default
-		objExecutor.run();
+		rbtnYolo.setSelected(true); // set yolo detector as default
+		yoloExecutor.run();
 	}
 	
-	public static void updateLabelIcon(JLabel lbl, Mat frame) {
+	public static void updateLabelIcon(JPanel panel, Mat frame) {
 		SwingUtilities.invokeLater(() -> {
 			try {
-				lbl.setIcon(new ImageIcon(mat2Img(frame)));
+				BufferedImage bi = mat2Img(frame);
+				Graphics g = panel.getGraphics();
+				g.drawImage(bi, 0, 0, panel);
+				g.dispose();
 			} catch (IOException e) {
 				Logger.error(e, "Could not convert image.");
 			}
@@ -150,8 +161,10 @@ public class MrodTestGui {
 	public static BufferedImage mat2Img(Mat mat) throws IOException {
 		MatOfByte bytes = new MatOfByte();
 		Imgcodecs.imencode(".png", mat, bytes);
-		ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes.toArray());
-		return ImageIO.read(inputStream);
+		try(ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes.toArray())) {
+			BufferedImage image = ImageIO.read(inputStream);
+			return image;
+		}
 	}
 	
 	public static List<String> readLinesFromFile(File file) {

@@ -3,3 +3,5 @@
 **/.settings/
 **/target/
 **/yolo/yolov3.weights
+**/yolo/yolov3-tiny.weights
+**/yolo/yolov3-openimages.weights

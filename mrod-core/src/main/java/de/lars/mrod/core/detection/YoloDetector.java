@@ -34,11 +34,13 @@ public class YoloDetector extends AbstractDetector<YoloDetectionResult> {
 		stopWatch = new Stopwatch();
 		net = Dnn.readNetFromDarknet(configFile, modelWeights);
 		net.setPreferableBackend(Dnn.DNN_BACKEND_OPENCV);
-		net.setPreferableTarget(Dnn.DNN_TARGET_OPENCL_FP16);
+		net.setPreferableTarget(Dnn.DNN_TARGET_OPENCL);
 		
 		outBlobs = new ArrayList<Mat>();
 		outNames = net.getUnconnectedOutLayersNames();
 		objNames = new ArrayList<String>();
+		
+		outNames.forEach(System.out::println);
 	}
 	
 	public void setObjectNames(List<String> objNames) {
@@ -71,7 +73,7 @@ public class YoloDetector extends AbstractDetector<YoloDetectionResult> {
 		return true;
 	}
 	
-	private float confidenceThreshold = 0.5f;
+	private float confidenceThreshold = 0.1f;
 	private float nmsThreshold = 0.3f; // Non-Maximal Suppression (only keep the best bounding box)
 	private boolean skipNms = false;
 	
