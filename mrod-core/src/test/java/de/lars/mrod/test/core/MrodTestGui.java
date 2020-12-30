@@ -31,8 +31,10 @@ import org.tinylog.Logger;
 
 import de.lars.mrod.core.DetectorExecutor;
 import de.lars.mrod.core.MrodCore;
+import de.lars.mrod.core.detection.HoughLineDetector;
 import de.lars.mrod.core.detection.ObjectDetector;
 import de.lars.mrod.core.detection.YoloDetector;
+import de.lars.mrod.core.detection.result.DetectionResult;
 import de.lars.mrod.core.detection.result.ObjectDetectionResult;
 import de.lars.mrod.core.detection.result.ResultCallback;
 import de.lars.mrod.core.detection.result.YoloDetectionResult;
@@ -55,11 +57,14 @@ public class MrodTestGui {
 		ButtonGroup rbtnGroup = new ButtonGroup();
 		JRadioButton rbtnObj = new JRadioButton("Haar Cascade");
 		JRadioButton rbtnYolo = new JRadioButton("Yolo v3");
+		JRadioButton rbtnHoughLines = new JRadioButton("Hough Lines Transform");
 		rbtnGroup.add(rbtnObj);
 		rbtnGroup.add(rbtnYolo);
+		rbtnGroup.add(rbtnHoughLines);
 		JPanel panelRbtns = new JPanel();
 		panelRbtns.add(rbtnObj);
 		panelRbtns.add(rbtnYolo);
+		panelRbtns.add(rbtnHoughLines);
 		
 		contentPane.add(panelImg, BorderLayout.CENTER);
 		contentPane.add(panelRbtns, BorderLayout.SOUTH);
@@ -126,6 +131,17 @@ public class MrodTestGui {
 		DetectorExecutor yoloExecutor = core.registerDetector(yoloDetector, 20);
 		
 		
+		//--
+		// Hough Lines Transform
+		HoughLineDetector houghLineDetector = new HoughLineDetector(vidCam);
+		houghLineDetector.addCallback(new ResultCallback<DetectionResult>() {
+			@Override
+			public void onDetectionResult(DetectionResult result) {
+				updateLabelIcon(panelImg, result.getFrame());
+			}
+		});
+		DetectorExecutor houghLineExecutor = core.registerDetector(houghLineDetector, 20);
+		
 		//---
 		// Radio Buttons
 		rbtnObj.addActionListener(l -> {
@@ -138,6 +154,12 @@ public class MrodTestGui {
 			if(!yoloExecutor.isRunning()) {
 				core.stopAllDetectors();
 				yoloExecutor.run();
+			}
+		});
+		rbtnHoughLines.addActionListener(l -> {
+			if(!houghLineExecutor.isRunning()) {
+				core.stopAllDetectors();
+				houghLineExecutor.run();
 			}
 		});
 		
